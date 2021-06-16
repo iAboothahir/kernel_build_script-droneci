@@ -69,9 +69,9 @@ CI_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 export CI_BRANCH
 
 # Specify compiler. 
-# 'clang'
-COMPILER=clang
-	if [ $COMPILER = "clang" ]
+# 'clang' or 'gcc'
+COMPILER=gcc
+	if [ $COMPILER = "gcc" ]
 	then
 		# install few necessary packages
 		apt-get -y install llvm lld gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu
@@ -145,13 +145,14 @@ DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%T")
 
 clone() {
 	echo " "
-	if [ $COMPILER = "clang" ]
+	if [ $COMPILER = "gcc" ]
 	then
-		msg "|| Cloning PROTON clang ||"
-		git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
-
-		# Toolchain Directory defaults to clang
-		TC_DIR=$KERNEL_DIR/clang
+		msg "|| Cloning GCC 9.3.0 baremetal ||"
+		git clone --depth=1 https://github.com/mvaisakh/gcc-arm64.git gcc64
+		git clone --depth=1 https://github.com/mvaisakh/gcc-arm.git gcc32
+		GCC64_DIR=$KERNEL_DIR/gcc64
+		GCC32_DIR=$KERNEL_DIR/gcc32
+	
 	fi
 
 	msg "|| Cloning Anykernel for X00T ||"
@@ -171,11 +172,11 @@ exports() {
 	export ARCH=arm64
 	export SUBARCH=arm64
 
-	if [ $COMPILER = "clang" ]
+	if [ $COMPILER = "gcc" ]
 	then
-		echo 'Compiling with Clang !'
-		KBUILD_COMPILER_STRING=$("$TC_DIR"/bin/clang --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
-		PATH=$TC_DIR/bin/:$PATH
+		echo 'Compiling with gcc !'
+		KBUILD_COMPILER_STRING=$("$GCC64_DIR"/bin/aarch64-elf-gcc --version | head -n 1 | perl -pe 's/\(http.*?\)//gs' | sed -e 's/  */ /g' -e 's/[[:space:]]*$//')
+		PATH=$GCC64_DIR/bin/:$GCC32_DIR/bin/:/usr/bin:$PATH
 	fi
 
 	export PATH KBUILD_COMPILER_STRING
